@@ -68,12 +68,15 @@
       <p id="text">El servidor gratuito se duerme cuando nadie lo usa y puede tardar hasta un minuto en arrancar. Te llevamos al chat apenas esté listo.</p>
       <div class="bar" aria-hidden="true"><span id="bar"></span></div>
       <p id="elapsed">0 s</p>
+      <!-- Respaldo: aparece a los 10 s por si el navegador bloquea la comprobación -->
+      <p id="skip" hidden><a id="skipLink" href="#">Entrar al chat ahora</a></p>
     </section>
   </main>
 
   <script>
     // ⚙️ CAMBIA ESTA URL por la de tu servicio en Render (sin "/" al final)
-    const RENDER_URL = 'https://sala-fis-chat.onrender.com';
+    const RENDER_URL = 'https://web-chat-q74e.onrender.com';
+    const SKIP_AFTER_SECONDS = 10; // muestra "Entrar al chat ahora"
 
     const EXPECTED_SECONDS = 60; // tiempo típico de arranque en el plan gratis
     const GIVE_UP_SECONDS = 180;
@@ -86,8 +89,10 @@
       const s = Math.round((Date.now() - start) / 1000);
       $('elapsed').textContent = s + ' s';
       $('bar').style.width = Math.min(95, (s / EXPECTED_SECONDS) * 100) + '%';
+      if (s >= SKIP_AFTER_SECONDS) $('skip').hidden = false;
       if (s >= GIVE_UP_SECONDS && !done) fail();
     }, 1000);
+    $('skipLink').href = RENDER_URL;
 
     // Pregunta a /healthz si el servidor ya responde. Mientras duerme, la petición
     // falla o tarda; cuando responde {ok:true}, el servidor está listo.
@@ -100,7 +105,10 @@
         clearTimeout(t);
         const body = await res.json();
         if (res.ok && body.ok) return ready();
-      } catch (e) { /* aún dormido */ }
+      } catch (e) {
+        // Aún dormido, o el navegador/una extensión bloqueó la petición (ver consola F12)
+        console.warn('Servidor aún no disponible:', e.name, e.message);
+      }
       setTimeout(check, 2500);
     }
 

@@ -173,9 +173,15 @@ function setStatus(state) {
 // Se muestra solo si la reconexión tarda más de 3 s, para no parpadear en cortes breves.
 const wake = { el: $('wakeOverlay'), seconds: $('wakeSeconds'), delay: null, tick: null, start: 0 };
 
+const wakeDefaults = { title: $('wakeTitle').textContent, text: $('wakeText').textContent };
+
 function showWake() {
   if (wake.delay || !wake.el.hidden) return;
   wake.delay = setTimeout(() => {
+    // Restaura el texto normal por si antes se mostró un error
+    delete wake.el.dataset.error;
+    $('wakeTitle').textContent = wakeDefaults.title;
+    $('wakeText').textContent = wakeDefaults.text;
     wake.start = Date.now();
     wake.seconds.textContent = '0';
     wake.el.hidden = false;
@@ -190,6 +196,17 @@ function hideWake() {
   clearInterval(wake.tick);
   wake.delay = wake.tick = null;
   wake.el.hidden = true;
+}
+
+// Misma ventana, pero para errores que no se arreglan esperando (sin spinner ni contador)
+function showWakeError(title, text) {
+  hideWake();
+  $('wakeTitle').textContent = title;
+  $('wakeText').textContent = text;
+  wake.el.dataset.error = 'true';
+  wake.el.hidden = false;
+  ui.statusText.textContent = 'Desconectado';
+  ui.status.dataset.state = 'desconectado';
 }
 
 // Pide al servidor un JWT de sesión a cambio del ID Token de Firebase
@@ -215,6 +232,14 @@ async function connect(user) {
     session = await getSessionToken(user);
   } catch (err) {
     if (err.status === 401) { await signOut(auth); return; }
+    // 403 = el servidor no permite este dominio: es un error de configuración, no hay que esperar
+    if (err.status === 403) {
+      showWakeError(
+        'Este dominio no está permitido',
+        `El servidor rechazó la conexión desde ${location.origin}. Agrega exactamente esa dirección a ALLOWED_ORIGINS en las variables de entorno (Render o .env) y vuelve a cargar la página.`
+      );
+      return;
+    }
     return scheduleReconnect(user);
   }
   if (manualClose) return; // cerró sesión mientras esperaba

@@ -18,3 +18,9 @@ web-chat-firebase.json
 ROADMAP.md
 
 LabWebAv05-WebSocket.docx
+# Capturas e informe de evidencias (no se suben al repo)
+evidencias/
+Evidencias-*.docx
+
+# Caché de firebase deploy
+.firebase/

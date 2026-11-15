@@ -1,0 +1,20 @@
+# Dependencias (no se versionan)
+node_modules/
+
+# Variables de entorno con claves secretas (¡NUNCA subir!)
+.env
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+
+# CSS generado por Tailwind (se compila con `npm run build`)
+public/styles.css
+
+# Varios
+.DS_Store
+npm-debug.log*
+.claude/
+
+web-chat-firebase.json
+ROADMAP.md
+
+LabWebAv05-WebSocket.docx

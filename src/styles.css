@@ -1,0 +1,171 @@
+/* Hoja de estilos propia con Tailwind CSS v4.
+   Se compila a public/styles.css con: npm run build */
+@import "tailwindcss";
+@source "../public";
+
+/* ---------- Paleta con variables CSS (modo claro) ---------- */
+:root {
+  --color-fondo: #e6ecf1;
+  --color-superficie: #f7f9fb;
+  --color-burbuja-enviada: #d3ebdd;
+  --color-burbuja-recibida: #ffffff;
+  --color-texto: #17212b;
+  --color-texto-suave: #586878;
+  --color-acento: #2b59c3;
+  --color-acento-texto: #ffffff;
+  --color-borde: #cdd6df;
+  --color-ok: #1b8452;
+  --color-alerta: #a86f00;
+  --color-error: #c0392b;
+  color-scheme: light;
+}
+
+/* ---------- Modo oscuro: solo cambian las variables ---------- */
+[data-theme="oscuro"] {
+  --color-fondo: #0f1722;
+  --color-superficie: #172231;
+  --color-burbuja-enviada: #1d4a3a;
+  --color-burbuja-recibida: #1f2b3b;
+  --color-texto: #e4ebf2;
+  --color-texto-suave: #95a5b6;
+  --color-acento: #86a9ff;
+  --color-acento-texto: #0f1722;
+  --color-borde: #2a3747;
+  --color-ok: #3ccb8a;
+  --color-alerta: #f2b636;
+  --color-error: #f27466;
+  color-scheme: dark;
+}
+
+/* Utilidades de Tailwind conectadas a la paleta (bg-bg, text-ink, bg-sent…) */
+@theme inline {
+  --color-bg: var(--color-fondo);
+  --color-surface: var(--color-superficie);
+  --color-sent: var(--color-burbuja-enviada);
+  --color-recv: var(--color-burbuja-recibida);
+  --color-ink: var(--color-texto);
+  --color-muted: var(--color-texto-suave);
+  --color-accent: var(--color-acento);
+  --color-line: var(--color-borde);
+  --font-body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+@layer base {
+  body { min-width: 360px; transition: background-color .2s, color .2s; }
+  :focus-visible { outline: 3px solid var(--color-acento); outline-offset: 2px; }
+}
+
+@layer components {
+  /* ---- Login ---- */
+  .login-hero {
+    background:
+      radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--color-acento) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+      var(--color-superficie);
+    border-bottom: 1px solid var(--color-borde);
+  }
+  @media (min-width: 1024px) {
+    .login-hero { border-bottom: 0; border-right: 1px solid var(--color-borde); }
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(4.5rem, 19vw, 11rem);
+    line-height: .82;
+    letter-spacing: -.045em;
+    color: var(--color-acento);
+  }
+
+  .tabs { @apply grid grid-cols-2 rounded-xl p-1 bg-surface border border-line; }
+  .tab { @apply rounded-lg py-2 text-sm font-bold text-muted cursor-pointer; }
+  .tab[aria-selected="true"] { @apply bg-bg text-ink shadow-sm; }
+
+  .field-label { @apply mb-1 block text-sm font-bold; }
+  .field {
+    @apply w-full rounded-xl border border-line bg-surface px-4 py-3 text-base text-ink placeholder:text-muted;
+    transition: border-color .15s;
+  }
+  .field:focus { outline: none; border-color: var(--color-acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-acento) 25%, transparent); }
+  .field:disabled { opacity: .6; }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-bold cursor-pointer;
+    background: var(--color-acento);
+    color: var(--color-acento-texto);
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+  .btn-secondary { @apply inline-flex items-center justify-center gap-3 rounded-xl border border-line bg-surface px-5 py-3 font-bold cursor-pointer; }
+  .btn-secondary:hover { border-color: var(--color-acento); }
+
+  .btn-ghost { @apply rounded-lg px-3 py-2 text-sm font-bold text-muted cursor-pointer; }
+  .btn-ghost:hover { color: var(--color-texto); background: var(--color-fondo); }
+
+  .divider { @apply my-6 flex items-center gap-3 text-sm text-muted; }
+  .divider::before, .divider::after { content: ""; @apply h-px flex-1 bg-line; }
+
+  .form-error { @apply rounded-lg px-3 py-2 text-sm; color: var(--color-error); background: color-mix(in srgb, var(--color-error) 12%, transparent); }
+
+  .theme-btn {
+    @apply fixed right-3 top-3 z-20 grid size-10 place-items-center rounded-full border border-line bg-surface cursor-pointer;
+  }
+  .theme-btn svg { @apply size-5; fill: none; stroke: var(--color-texto); stroke-width: 2; stroke-linecap: round; }
+  .theme-btn .icon-moon { fill: var(--color-texto); stroke: none; }
+  .theme-btn .icon-sun { display: none; }
+  [data-theme="oscuro"] .theme-btn .icon-sun { display: block; }
+  [data-theme="oscuro"] .theme-btn .icon-moon { display: none; }
+
+  /* ---- Chat ---- */
+  .chat-header { @apply flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6; }
+
+  .status { @apply inline-flex items-center gap-1.5 font-bold; }
+  .status-dot { @apply size-2.5 rounded-full; background: currentColor; }
+  .status[data-state="conectado"] { color: var(--color-ok); }
+  .status[data-state="reconectando"] { color: var(--color-alerta); }
+  .status[data-state="reconectando"] .status-dot { animation: pulse 1s ease-in-out infinite; }
+  .status[data-state="desconectado"] { color: var(--color-error); }
+
+  .messages { @apply flex-1 overflow-y-auto px-3 py-4 sm:px-6 flex flex-col gap-1.5; }
+  .empty { @apply m-auto max-w-[28ch] text-center text-muted; }
+
+  .msg { @apply max-w-[82%] sm:max-w-[65%] rounded-2xl px-3.5 pt-2 pb-1.5 shadow-sm; overflow-wrap: anywhere; }
+  .msg-in  { @apply self-start bg-recv rounded-tl-sm; }
+  .msg-out { @apply self-end bg-sent rounded-tr-sm; }
+  .msg-author { @apply block text-sm font-bold text-accent; }
+  .msg-text { @apply leading-snug whitespace-pre-wrap; }
+  .msg-time { @apply float-right ml-3 mt-1.5 text-xs text-muted; font-variant-numeric: tabular-nums; }
+
+  .notice { @apply self-center my-2 rounded-full bg-surface px-3 py-1 text-center text-xs text-muted border border-line; }
+
+  .typing { @apply h-6 px-4 text-sm italic text-muted sm:px-6; }
+
+  .composer { @apply border-t border-line bg-surface px-3 pt-2 sm:px-6; padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+  .composer-error { @apply mb-2 rounded-lg px-3 py-1.5 text-sm; color: var(--color-error); background: color-mix(in srgb, var(--color-error) 12%, transparent); }
+  .char-count { @apply pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted; font-variant-numeric: tabular-nums; }
+  .char-count.over { color: var(--color-error); font-weight: 700; }
+}
+
+@layer components {
+  /* ---- Ventana "el servidor se está iniciando" ---- */
+  .wake {
+    @apply fixed inset-0 z-30 grid place-items-center p-4;
+    background: color-mix(in srgb, var(--color-fondo) 80%, transparent);
+    backdrop-filter: blur(4px);
+  }
+  .wake-card { @apply w-full max-w-sm rounded-2xl border border-line bg-surface p-6 text-center shadow-lg; }
+  .wake-title { @apply mt-4 font-display text-2xl font-extrabold leading-tight; }
+  .wake-spinner {
+    @apply mx-auto size-10 rounded-full;
+    border: 4px solid var(--color-borde);
+    border-top-color: var(--color-acento);
+    animation: spin .9s linear infinite;
+  }
+}
+
+@keyframes pulse { 50% { opacity: .25; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

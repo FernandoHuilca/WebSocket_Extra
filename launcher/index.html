@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sala FIS · Entrando</title>
+  <meta name="description" content="Página de entrada: despierta el servidor del chat y te lleva a él">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232B59C3'/><path d='M9 11h14v8H14l-5 4z' fill='white'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap" rel="stylesheet">
+  <style>
+    /* Misma paleta que el chat (variables CSS) */
+    :root {
+      --color-fondo: #e6ecf1; --color-superficie: #f7f9fb; --color-texto: #17212b;
+      --color-texto-suave: #586878; --color-acento: #2b59c3; --color-borde: #cdd6df; --color-error: #c0392b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-fondo: #0f1722; --color-superficie: #172231; --color-texto: #e4ebf2;
+        --color-texto-suave: #95a5b6; --color-acento: #86a9ff; --color-borde: #2a3747; --color-error: #f27466;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 16px;
+      font: 1rem/1.5 "Atkinson Hyperlegible", system-ui, sans-serif;
+      color: var(--color-texto);
+      background:
+        radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--color-acento) 22%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+        var(--color-fondo);
+    }
+    main { width: 100%; max-width: 26rem; }
+    h1 {
+      margin: 0; font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800;
+      font-size: clamp(4rem, 22vw, 7.5rem); line-height: .82; letter-spacing: -.045em; color: var(--color-acento);
+    }
+    .card {
+      margin-top: 2rem; padding: 1.5rem; border-radius: 1rem;
+      background: var(--color-superficie); border: 1px solid var(--color-borde);
+    }
+    .row { display: flex; align-items: center; gap: .875rem; }
+    .spinner {
+      flex: none; width: 2rem; height: 2rem; border-radius: 50%;
+      border: 4px solid var(--color-borde); border-top-color: var(--color-acento);
+      animation: spin .9s linear infinite;
+    }
+    .title { margin: 0; font-weight: 700; font-size: 1.125rem; }
+    p { margin: .5rem 0 0; color: var(--color-texto-suave); }
+    .bar { margin-top: 1.25rem; height: 6px; border-radius: 3px; background: var(--color-borde); overflow: hidden; }
+    .bar > span { display: block; height: 100%; width: 0; background: var(--color-acento); transition: width 1s linear; }
+    a { color: var(--color-acento); font-weight: 700; }
+    .error .spinner { animation: none; border-top-color: var(--color-error); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .bar > span { transition: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Sala<br>FIS</h1>
+    <section id="card" class="card" aria-live="polite">
+      <div class="row">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>
+          <p id="title" class="title">Despertando el servidor…</p>
+        </div>
+      </div>
+      <p id="text">El servidor gratuito se duerme cuando nadie lo usa y puede tardar hasta un minuto en arrancar. Te llevamos al chat apenas esté listo.</p>
+      <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+      <p id="elapsed">0 s</p>
+    </section>
+  </main>
+
+  <script>
+    // ⚙️ CAMBIA ESTA URL por la de tu servicio en Render (sin "/" al final)
+    const RENDER_URL = 'https://sala-fis-chat.onrender.com';
+
+    const EXPECTED_SECONDS = 60; // tiempo típico de arranque en el plan gratis
+    const GIVE_UP_SECONDS = 180;
+    const $ = (id) => document.getElementById(id);
+    const start = Date.now();
+    let done = false;
+
+    // Contador y barra de progreso aproximada
+    const timer = setInterval(() => {
+      const s = Math.round((Date.now() - start) / 1000);
+      $('elapsed').textContent = s + ' s';
+      $('bar').style.width = Math.min(95, (s / EXPECTED_SECONDS) * 100) + '%';
+      if (s >= GIVE_UP_SECONDS && !done) fail();
+    }, 1000);
+
+    // Pregunta a /healthz si el servidor ya responde. Mientras duerme, la petición
+    // falla o tarda; cuando responde {ok:true}, el servidor está listo.
+    async function check() {
+      if (done) return;
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 15000);
+        const res = await fetch(RENDER_URL + '/healthz', { cache: 'no-store', signal: ctrl.signal });
+        clearTimeout(t);
+        const body = await res.json();
+        if (res.ok && body.ok) return ready();
+      } catch (e) { /* aún dormido */ }
+      setTimeout(check, 2500);
+    }
+
+    function ready() {
+      done = true;
+      clearInterval(timer);
+      $('bar').style.width = '100%';
+      $('title').textContent = 'Servidor listo';
+      $('text').textContent = 'Entrando al chat…';
+      location.replace(RENDER_URL);
+    }
+
+    function fail() {
+      done = true;
+      clearInterval(timer);
+      $('card').classList.add('error');
+      $('title').textContent = 'El servidor no respondió';
+      $('text').innerHTML = 'Pasaron 3 minutos sin respuesta. Revisa que el servicio esté activo en Render, o <a href="' + RENDER_URL + '">abre el chat directamente</a>.';
+    }
+
+    check();
+  </script>
+</body>
+</html>
